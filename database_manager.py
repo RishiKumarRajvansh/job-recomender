@@ -553,6 +553,19 @@ def search_jobs_db(query="All", location="All", resume_skills=None, user_id=None
     """Search jobs in the database with filtering and skill matching."""
     conn = get_db_connection()
     try:
+        # Check if user_id column exists in jobs table
+        cursor = conn.execute("PRAGMA table_info(jobs)")
+        columns = [column[1] for column in cursor.fetchall()]
+        
+        if "user_id" not in columns:
+            # Add user_id column if it doesn't exist
+            try:
+                conn.execute("ALTER TABLE jobs ADD COLUMN user_id INTEGER")
+                conn.commit()
+                logger.info("Added user_id column to jobs table")
+            except Exception as e:
+                logger.error(f"Error adding user_id column: {e}")
+        
         # Enable datetime parsing from SQLite
         conn.row_factory = sqlite3.Row
         
@@ -604,14 +617,24 @@ def search_jobs_db(query="All", location="All", resume_skills=None, user_id=None
             for part in location_parts:
                 location_clause.append('(LOWER(j.location) LIKE ? OR LOWER(j.location) = ?)')
                 params.extend([f'%{part}%', part])  # Add both fuzzy and exact match parameters
-            where_clauses.append('(' + ' OR '.join(location_clause) + ')')
-          # Add user_id filter if provided
+            where_clauses.append('(' + ' OR '.join(location_clause) + ')')        # Add user_id filter if provided
         if user_id:
-            if where_clauses:
-                where_clauses.append('j.user_id = ?')
-            else:
-                base_query += ' WHERE j.user_id = ?'
-            params.append(user_id)
+            try:
+                # Only add user_id filter if the column exists
+                cursor = conn.execute("PRAGMA table_info(jobs)")
+                columns = [column[1] for column in cursor.fetchall()]
+                
+                if "user_id" in columns:
+                    if where_clauses:
+                        where_clauses.append('j.user_id = ?')
+                    else:
+                        base_query += ' WHERE j.user_id = ?'
+                    params.append(user_id)
+                else:
+                    logger.warning("user_id column not found in jobs table, skipping user_id filter")
+            except Exception as e:
+                logger.error(f"Error checking for user_id column: {e}")
+                # Continue without the user_id filter
         
         # Add WHERE clause if we have other conditions
         if where_clauses and 'WHERE' not in base_query:
