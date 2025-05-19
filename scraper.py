@@ -89,6 +89,9 @@ def parse_job_detail_page_adzuna(full_job_url):
 
 def parse_job_listing(job_listing, user_id, user_skills=None):
     """Parse a job listing and return the job ID."""
+    # Import at the top level to avoid UnboundLocalError
+    from database_manager import save_job_to_db
+    
     if not user_id:
         logger.error("No user_id provided to parse_job_listing")
         return None
@@ -103,8 +106,13 @@ def parse_job_listing(job_listing, user_id, user_skills=None):
             job_data['user_id'] = user_id
             
             # If it's already a dictionary, just save it directly
-            from database_manager import save_job_to_db
-            return save_job_to_db(job_data, user_id)
+            try:
+                job_id = save_job_to_db(job_data, user_id)
+                logger.info(f"Saved job directly from dictionary with ID: {job_id}")
+                return job_id
+            except Exception as save_err:
+                logger.error(f"Error saving job from dictionary: {save_err}")
+                return None
             
         # If we get here, job_listing is a BeautifulSoup element
         
@@ -118,14 +126,11 @@ def parse_job_listing(job_listing, user_id, user_skills=None):
         if hasattr(job_listing, 'get'):
             job_data['job_id'] = job_listing.get('data-aid', '')
           # Extract title and URL
-        try:
-            # Check if job_listing is a dictionary (already parsed or from DB)
+        try:        # Check if job_listing is a dictionary (already parsed or from DB)
             if isinstance(job_listing, dict):
                 # Dictionary already has all the data we need
-                from database_manager import save_job_to_db
                 job_listing['user_id'] = user_id  # Ensure user_id is set
-                return save_job_to_db(job_listing, user_id)
-                
+                return save_job_to_db(job_listing, user_id)                
             # Otherwise, proceed with BeautifulSoup parsing
             title_elem = job_listing.select_one('h2[itemprop="title"], h2.job-title, .a-title, a[data-aid="jobTitle"]')
             if not title_elem:
@@ -138,7 +143,6 @@ def parse_job_listing(job_listing, user_id, user_skills=None):
             logger.error(f"Traceback: {traceback.format_exc()}")
             # If it's a dictionary but we tried to use BeautifulSoup methods
             if isinstance(job_listing, dict):
-                from database_manager import save_job_to_db
                 job_listing['user_id'] = user_id
                 return save_job_to_db(job_listing, user_id)
             return None
@@ -449,56 +453,67 @@ def scrape_adzuna_jobs(query="All", location="All", user_skills=None, pages=1, u
     all_found_jobs_ids = []  # Stores job IDs from _do_search
     searched_urls = set()
     
-    if user_skills:
-        logger.info(f"Performing skill-based search for user {user_id} with skills: {user_skills}")
-        for skill in user_skills:
-            skill_specific_query = f"{search_query} {skill}".strip()
-            logger.info(f"Searching for skill: {skill} with query: '{skill_specific_query}' for user {user_id}")
-            skill_jobs_ids = _do_search(
-                skill_specific_query, 
-                location, 
-                pages=1, # Typically 1 page per skill to broaden reach without excessive scraping
-                searched_urls=searched_urls,
-                skill=skill,
-                user_id=user_id,
-                user_skills=user_skills # Pass all user skills for context if _do_search uses them
-            )
-            if skill_jobs_ids:
-                all_found_jobs_ids.extend(job_id for job_id in skill_jobs_ids if job_id not in all_found_jobs_ids)
+    try:
+        # Handle case where user_skills is string instead of list
+        if isinstance(user_skills, str):
+            user_skills = [skill.strip() for skill in user_skills.split(',') if skill.strip()]
+            logger.info(f"Converted user_skills string to list: {user_skills}")
         
-        # Optionally, also do a general search if a base query was provided
-        if search_query:
-            logger.info(f"Performing base search with query: '{search_query}' for user {user_id}")
-            base_jobs_ids = _do_search(
+        if user_skills:
+            logger.info(f"Performing skill-based search for user {user_id} with skills: {user_skills}")
+            for skill in user_skills:
+                skill_specific_query = f"{search_query} {skill}".strip()
+                logger.info(f"Searching for skill: {skill} with query: '{skill_specific_query}' for user {user_id}")
+                skill_jobs_ids = _do_search(
+                    skill_specific_query, 
+                    location, 
+                    pages=1, # Typically 1 page per skill to broaden reach without excessive scraping
+                    searched_urls=searched_urls,
+                    skill=skill,
+                    user_id=user_id,
+                    user_skills=user_skills # Pass all user skills for context if _do_search uses them
+                )
+                if skill_jobs_ids:
+                    all_found_jobs_ids.extend(job_id for job_id in skill_jobs_ids if job_id not in all_found_jobs_ids)
+            
+            # Optionally, also do a general search if a base query was provided
+            if search_query:
+                logger.info(f"Performing base search with query: '{search_query}' for user {user_id}")
+                base_jobs_ids = _do_search(
+                    search_query,
+                    location,
+                    pages, # Use specified pages for base query
+                    searched_urls,
+                    user_id=user_id,
+                    user_skills=user_skills
+                )
+                if base_jobs_ids:
+                    all_found_jobs_ids.extend(job_id for job_id in base_jobs_ids if job_id not in all_found_jobs_ids)
+        else:
+            # No user_skills provided, do a single general search
+            logger.info(f"Performing general search (no specific skills) with query: '{search_query}' for user {user_id}")
+            all_found_jobs_ids = _do_search(
                 search_query,
                 location,
-                pages, # Use specified pages for base query
+                pages,
                 searched_urls,
                 user_id=user_id,
-                user_skills=user_skills
+                user_skills=None # Pass None if no skills were provided
             )
-            if base_jobs_ids:
-                all_found_jobs_ids.extend(job_id for job_id in base_jobs_ids if job_id not in all_found_jobs_ids)
-    else:
-        # No user_skills provided, do a single general search
-        logger.info(f"Performing general search (no specific skills) with query: '{search_query}' for user {user_id}")
-        all_found_jobs_ids = _do_search(
-            search_query,
-            location,
-            pages,
-            searched_urls,
-            user_id=user_id,
-            user_skills=user_skills # Pass user_skills even if empty, _do_search might handle it
-        )
 
-    num_jobs_ids_found = len(all_found_jobs_ids)
-    logger.info(f"Completed Adzuna scraping phase for user {user_id}, found {num_jobs_ids_found} unique job IDs to process.")
-    
-    if num_jobs_ids_found == 0:
-        logger.warning(f"No job IDs found by Adzuna scraping phase for user {user_id}.")
-        return [] # Return empty list of IDs
+        num_jobs_ids_found = len(all_found_jobs_ids)
+        logger.info(f"Completed Adzuna scraping phase for user {user_id}, found {num_jobs_ids_found} unique job IDs to process.")
         
-    return all_found_jobs_ids # Return the list of unique job IDs found in this scrape
+        if num_jobs_ids_found == 0:
+            logger.warning(f"No job IDs found by Adzuna scraping phase for user {user_id}.")
+            return [] # Return empty list of IDs
+            
+        return all_found_jobs_ids # Return the list of unique job IDs found in this scrape
+        
+    except Exception as e:
+        logger.error(f"Error in scrape_adzuna_jobs: {str(e)}")
+        logger.error(traceback.format_exc())
+        return []
 
 def _do_search(search_query, location, pages, searched_urls, skill=None, user_id=None, user_skills=None):
     """Helper function to perform a single search with given parameters."""
@@ -524,11 +539,8 @@ def _do_search(search_query, location, pages, searched_urls, skill=None, user_id
                 continue
                 
             # Process the HTML content for this page
-            soup = BeautifulSoup(html_content, 'html.parser')
-            
-            # Use the specific Adzuna article selector
+            soup = BeautifulSoup(html_content, 'html.parser')            # Use the specific Adzuna article selector
             articles = soup.select('article.a')
-            
             if not articles:
                 logger.warning(f"No job listings found on page {page_num}. Trying alternative selectors...")
                 # Try alternative selectors if the main one fails
@@ -547,6 +559,7 @@ def _do_search(search_query, location, pages, searched_urls, skill=None, user_id
                         # If article is already a dictionary, save directly
                         article['user_id'] = user_id
                         job_id = save_job_to_db(article, user_id)
+                        logger.info(f"Saved dictionary job listing directly with user_id={user_id}")
                     else:
                         # Otherwise parse as BeautifulSoup element
                         job_id = parse_job_listing(article, user_id, user_skills=user_skills)
@@ -556,9 +569,12 @@ def _do_search(search_query, location, pages, searched_urls, skill=None, user_id
                         if skill:
                             add_job_skills(job_id, [skill])
                         jobs_found.append(job_id)
-                        # Only log summary information, not individual job processing
+                        logger.info(f"Successfully processed job with ID: {job_id}")
+                    else:
+                        logger.warning("Job processing did not return a valid job_id")
                 except Exception as e:
                     logger.error(f"Error processing job listing: {str(e)}")
+                    logger.error(traceback.format_exc())
                     continue
                     
             # Random delay between pages
@@ -619,20 +635,37 @@ def scrape_jobs(query="All", location="All", user_skills=None, pages=1, force_cl
 
         # Fetch the full job details for these IDs from the database.
         # The jobs should have been saved with the correct user_id by _do_search -> save_job_to_db.
-        # Filter by user_id again for safety, though IDs should be specific to this scrape.
-        placeholders = ','.join(['?' for _ in adzuna_job_ids])
-        sql_query = f"SELECT * FROM jobs WHERE id IN ({placeholders}) AND user_id = ?"
-        # Ensure adzuna_job_ids are distinct if not already, though extend logic above tries to ensure this
-        params = [*list(set(adzuna_job_ids)), user_id] 
-        
-        logger.debug(f"Fetching jobs from DB with query: {sql_query} and params: {params}")
-        cursor.execute(sql_query, params)
-        
-        jobs_from_db = cursor.fetchall() # Returns list of sqlite3.Row objects
-        logger.info(f"Fetched {len(jobs_from_db)} job details from DB for user {user_id} matching scraped IDs.")
-        
-        if conn: conn.close()
-        return [dict(job) for job in jobs_from_db] # Convert Row objects to dictionaries
+        try:
+            # Ensure adzuna_job_ids are distinct
+            unique_job_ids = list(set(adzuna_job_ids))
+            placeholders = ','.join(['?' for _ in unique_job_ids])
+            sql_query = f"SELECT * FROM jobs WHERE id IN ({placeholders}) AND user_id = ?"
+            params = [*unique_job_ids, user_id] 
+            
+            logger.info(f"Fetching jobs from DB with query: {sql_query}, params length: {len(params)}")
+            cursor.execute(sql_query, params)
+            
+            jobs_from_db = cursor.fetchall() # Returns list of sqlite3.Row objects
+            logger.info(f"Fetched {len(jobs_from_db)} job details from DB for user {user_id} matching scraped IDs.")
+            
+            # Convert Row objects to dictionaries with better error handling
+            job_dicts = []
+            for job in jobs_from_db:
+                try:
+                    job_dict = dict(job)
+                    job_dicts.append(job_dict)
+                except Exception as e:
+                    logger.error(f"Failed to convert job to dict: {e}")
+            
+            if conn: conn.close()
+            logger.info(f"Returning {len(job_dicts)} job dictionaries")
+            return job_dicts
+            
+        except Exception as e:
+            logger.error(f"Error fetching jobs from database: {e}")
+            logger.error(traceback.format_exc())
+            if conn: conn.close()
+            return []
 
     except sqlite3.Error as db_err:
         logger.error(f"Database error during job scraping for user {user_id}: {db_err}")
@@ -658,13 +691,18 @@ def main_adzuna(query="All", location="All", pages=1, user_id=None):
             logger.error("No user_id provided. Aborting scraping.")
             return False
             
-        # Verify user exists
+        # Verify user exists, but continue even if not found
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT id FROM user WHERE id = ?', (user_id,))
+        # First check if user table exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user'")
         if not cursor.fetchone():
-            logger.error(f"User with ID {user_id} does not exist in database")
-            return False
+            logger.warning("User table not found in database, continuing with provided user_id")
+        else:
+            cursor.execute('SELECT id FROM user WHERE id = ?', (user_id,))
+            if not cursor.fetchone():
+                logger.warning(f"User with ID {user_id} does not exist in database but continuing anyway")
+                # We'll continue without failing - the user_id will be used for job attribution
             
         logger.info("Starting job scraping...")
         jobs = scrape_adzuna_jobs(query=query, location=location, pages=pages, user_id=user_id)
