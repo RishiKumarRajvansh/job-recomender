@@ -1,0 +1,164 @@
+/* Dashboard specific styles */
+
+/* Card hover effects */
+.card-hover {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+}
+
+/* Transition effects */
+.transition-effect {
+    transition: all 0.3s ease-in-out;
+}
+
+/* Pulse animation for icons */
+.pulse-effect {
+    position: relative;
+}
+
+.pulse-effect::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+    }
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
+}
+
+/* Hover effect for list items */
+.hover-item {
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.hover-item:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+    transform: translateX(3px);
+}
+
+/* Hover effect for sidebar links */
+.nav-link.hover-effect {
+    transition: background-color 0.2s ease, color 0.2s ease, padding-left 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.nav-link.hover-effect:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+    padding-left: 1.5rem;
+    border-left: 3px solid #0D6EFD;
+}
+
+.nav-link.active.hover-effect {
+    background-color: rgba(13, 110, 253, 0.1);
+    border-left: 3px solid #0D6EFD;
+    font-weight: 500;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .card-hover:hover {
+        transform: none;
+    }
+    
+    .card {
+        margin-bottom: 15px;
+    }
+    
+    .chart-container {
+        max-width: 150px;
+        margin: 0 auto;
+    }
+}
+
+/* Better spacing for card content */
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Text overflow handling */
+.text-truncate-custom {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
+}
+
+/* Chart container styling */
+.chart-container {
+    margin: 0 auto;
+}
+
+/* Add shadows to progress bars */
+.progress {
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 10px;
+}
+
+.progress-bar {
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+/* Add some subtle animations to buttons */
+.btn {
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Make badges more appealing */
+.badge {
+    padding: 0.4em 0.6em;
+    font-weight: 500;
+}
+
+/* Table styling enhancements */
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Additional responsiveness for mobile */
+@media (max-width: 576px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        word-break: break-word;
+    }
+    
+    .text-truncate {
+        max-width: 120px !important;
+    }
+}

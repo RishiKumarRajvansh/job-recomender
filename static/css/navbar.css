@@ -1,0 +1,129 @@
+/* 
+ * Navbar styling - Main navigation styles for all pages
+ * This file contains all navbar-related styling to ensure consistency
+ */
+
+/* Basic navbar styling - Consistent across all pages */
+.navbar {
+    padding: 0.5rem 1rem !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    margin-bottom: 1rem !important;
+    position: fixed !important;
+    top: 0 !important;
+    width: 100% !important;
+    z-index: 1030 !important;
+}
+
+/* Universal fix for navigation links - applies to all pages */
+body .navbar-nav .nav-link {
+    display: flex !important;
+    align-items: center !important;
+    height: 100% !important;
+    font-size: 1rem !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 400 !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+}
+
+/* Fix any navbar inconsistencies between pages */
+.navbar-brand i, 
+.navbar-nav .nav-link i {
+    font-size: inherit !important;
+    line-height: inherit !important;
+    vertical-align: middle !important;
+}
+
+/* Brand styling */
+.navbar-brand {
+    margin-right: 1rem !important;
+    padding-top: 0.3125rem !important;
+    padding-bottom: 0.3125rem !important;
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* Navigation links - Fix consistent appearance */
+.navbar-nav {
+    display: flex !important;
+    padding-left: 0 !important;
+    margin-bottom: 0 !important;
+    list-style: none !important;
+    align-items: center !important;
+}
+
+.navbar-nav .nav-link {
+    padding: 0.5rem 1rem !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    transition: color 0.15s ease-in-out !important;
+    font-size: 1rem !important;  /* Force consistent font size */
+}
+
+.navbar-nav .nav-link:hover {
+    color: #ffffff !important;
+    text-decoration: none !important;
+}
+
+.navbar-nav .nav-link.active {
+    color: #ffffff !important;
+    font-weight: 500 !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;  /* Highlight active page */
+    border-bottom: 2px solid white !important;  /* Add underline to active page */
+    position: relative !important;
+}
+
+/* Nav items */
+.nav-item {
+    margin-right: 0.25rem !important;
+    display: flex !important;
+    align-items: center !important;
+    position: relative !important; /* For active indicator positioning */
+}
+
+/* Responsive behavior for larger screens */
+@media (min-width: 992px) {
+    .navbar-expand-lg .navbar-nav {
+        flex-direction: row !important;
+    }
+    
+    .navbar-expand-lg .navbar-collapse {
+        display: flex !important;
+        flex-basis: auto !important;
+    }
+    
+    .navbar-expand-lg .navbar-toggler {
+        display: none !important;
+    }
+    
+    /* Make all nav items the same height */
+    .navbar-nav .nav-item {
+        display: flex !important;
+        align-items: center !important;
+        height: 100% !important;
+    }
+}
+
+/* Responsive behavior for mobile/tablet */
+@media (max-width: 991.98px) {
+    .navbar-expand-lg .navbar-nav {
+        flex-direction: column !important;
+    }
+    
+    .nav-item {
+        width: 100% !important;
+        margin-bottom: 0.25rem !important;
+    }
+    
+    .navbar-collapse {
+        padding-top: 0.5rem !important;
+    }
+    
+    /* Fix mobile menu appearance */
+    .navbar-collapse.show {
+        background-color: #0d6efd !important;
+        padding: 1rem !important;
+        border-radius: 0 0 0.5rem 0.5rem !important;
+    }
+}

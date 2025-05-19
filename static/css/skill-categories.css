@@ -1,0 +1,55 @@
+/* Styling for empty skill category sections */
+.empty-skill-category {
+    padding: 2rem;
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+/* Smooth scrolling for the entire page */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Style for clickable skill badges */
+.skill-badge {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 0.15rem;
+    display: inline-block;
+}
+
+.skill-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Style for skill badge links */
+a .skill-badge {
+    text-decoration: none;
+}
+
+a:hover .skill-badge {
+    text-decoration: none;
+    background-color: #e0a800 !important;
+}
+
+.empty-skill-category .icon {
+    font-size: 2.5rem;
+    color: #adb5bd;
+    margin-bottom: 1rem;
+    display: inline-block;
+}
+
+.empty-skill-category h5 {
+    color: #6c757d;
+    margin-bottom: 0.75rem;
+}
+
+.empty-skill-category p {
+    color: #888;
+    margin-bottom: 0;
+}

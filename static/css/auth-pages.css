@@ -1,0 +1,75 @@
+/* Auth pages specific styling */
+
+/* Form styling for login, register, and upload resume pages */
+body.login-page .form-control,
+body.register-page .form-control,
+body.upload-resume-page .form-control {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border-radius: 0.375rem;
+    border: 1px solid #ced4da;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+body.login-page .form-control:focus,
+body.register-page .form-control:focus,
+body.upload-resume-page .form-control:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Button styling */
+body.login-page .btn-primary,
+body.register-page .btn-primary,
+body.upload-resume-page .btn-primary {
+    padding: 0.5rem 1.25rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+}
+
+/* Card styling for auth pages */
+body.login-page .card,
+body.register-page .card,
+body.upload-resume-page .card {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    margin-top: 2rem;
+}
+
+body.login-page .card-header,
+body.register-page .card-header,
+body.upload-resume-page .card-header {
+    background-color: #f8f9fa;
+    padding: 1.25rem 1.5rem;
+}
+
+/* Consistent spacing */
+body.login-page .card-body,
+body.register-page .card-body,
+body.upload-resume-page .card-body {
+    padding: 1.5rem;
+}
+
+/* Card footer styling */
+body.login-page .card-footer,
+body.register-page .card-footer,
+body.upload-resume-page .card-footer {
+    padding: 1rem 1.5rem;
+    background-color: #f8f9fa;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Form validation and error styling */
+body.login-page .is-invalid,
+body.register-page .is-invalid,
+body.upload-resume-page .is-invalid {
+    border-color: #dc3545 !important;
+}
+
+body.login-page .invalid-feedback,
+body.register-page .invalid-feedback,
+body.upload-resume-page .invalid-feedback {
+    color: #dc3545;
+    font-size: 0.875rem;
+}

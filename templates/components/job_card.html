@@ -1,0 +1,148 @@
+{% macro render_job_card(job, user_skills=None) %}
+<div class="card mb-4 border-0 shadow-sm job-card" data-match-percentage="{{ job.match_percentage|default(0) }}">
+    <div class="card-body position-relative">
+        <!-- Job Match Badge - Absolutely positioned at top-right -->
+        {% if job.match_percentage is defined and job.match_percentage > 0 %}
+        <div class="position-absolute top-0 end-0 pt-3 pe-3">
+            <span class="badge bg-{{ 'success' if job.match_percentage >= 70 else 'warning' if job.match_percentage >= 40 else 'danger' }} rounded-pill shadow-sm">
+                <i class="bi bi-award me-1"></i>{{ job.match_percentage }}% Match
+            </span>
+        </div>
+        {% endif %}
+        
+        <!-- Header with Title and Company -->
+        <div class="row mb-3">
+            <div class="col">
+                <div class="d-flex align-items-start">
+                    <div>
+                        <h5 class="card-title mb-1 fw-bold">{{ job.title }}</h5>
+                        <h6 class="text-muted mb-2">{{ job.company }}</h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Job Details -->
+        <div class="mb-3">
+            <div class="d-flex flex-wrap gap-2">
+                {% if job.location %}
+                <span class="badge bg-light text-dark border">
+                    <i class="bi bi-geo-alt me-1"></i>{{ job.location }}
+                </span>
+                {% endif %}
+                {% if job.employment_type %}
+                <span class="badge bg-info">
+                    <i class="bi bi-briefcase me-1"></i>{{ job.employment_type|title }}
+                </span>
+                {% endif %}
+                {% if job.experience_level %}
+                <span class="badge bg-secondary">
+                    <i class="bi bi-person-badge me-1"></i>{{ job.experience_level|title }}
+                </span>
+                {% endif %}
+                {% if job.is_remote %}
+                <span class="badge bg-primary">
+                    <i class="bi bi-laptop me-1"></i>Remote
+                </span>
+                {% endif %}
+                {% if job.is_new %}
+                <span class="badge bg-warning text-dark">
+                    <i class="bi bi-star-fill me-1"></i>New
+                </span>
+                {% endif %}
+                {% if job.is_urgent %}
+                <span class="badge bg-danger">
+                    <i class="bi bi-exclamation-circle me-1"></i>Urgent
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div class="mb-3">
+            <p class="card-text text-muted small">
+                {{ job.description[:200] + '...' if job.description|length > 200 else job.description }}
+            </p>
+        </div>
+
+        <!-- Skills Section -->
+        <div class="mb-3">
+            <!-- Required Skills -->
+            {% if job.required_skills %}
+            <div class="mb-2">                <h6 class="small fw-bold mb-2">
+                    <i class="bi bi-check-circle-fill me-1 text-primary"></i>Required Skills 
+                    {% if user_skills and job.matching_required_skills %}
+                    <span class="text-success ms-1">
+                        ({{ job.matching_required_skills|length }}/{{ job.required_skills|length }} matched)
+                    </span>
+                    {% endif %}
+                </h6>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for skill in job.required_skills %}
+                        {% if user_skills and skill in job.matching_required_skills %}
+                        <span class="badge bg-success">
+                            <i class="bi bi-check-circle-fill me-1"></i>{{ skill }}
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ skill }}</span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Nice to Have Skills -->
+            {% if job.nice_to_have_skills %}
+            <div class="mb-2">
+                <h6 class="small fw-bold mb-2">
+                    <i class="bi bi-plus-circle me-1 text-info"></i>Nice to Have 
+                    {% if user_skills and job.matching_nice_to_have_skills %}
+                    <span class="text-info ms-1">
+                        ({{ job.matching_nice_to_have_skills|length }}/{{ job.nice_to_have_skills|length }} matched)
+                    </span>
+                    {% endif %}
+                </h6>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for skill in job.nice_to_have_skills %}
+                        {% if user_skills and skill in job.matching_nice_to_have_skills %}
+                        <span class="badge bg-info">
+                            <i class="bi bi-check-circle-fill me-1"></i>{{ skill }}
+                        </span>
+                        {% else %}
+                        <span class="badge bg-light text-dark border">{{ skill }}</span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Missing Skills -->
+            {% if user_skills and job.missing_skills %}
+            <div class="mt-2">
+                <h6 class="small fw-bold mb-2">
+                    <i class="bi bi-exclamation-circle me-1 text-warning"></i>Skills to Develop
+                </h6>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for skill in job.missing_skills %}
+                    <span class="badge bg-warning text-dark">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>        <!-- Footer with Apply Button -->
+        <hr class="my-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+                <i class="bi bi-calendar-event me-1"></i>{{ job.date_posted or job.date_scraped }}
+            </small>
+            <div>
+                {% if job.url %}
+                <a href="{{ job.url }}" target="_blank" class="btn btn-primary btn-sm apply-btn">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Apply Now
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}

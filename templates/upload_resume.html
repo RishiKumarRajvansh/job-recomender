@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Upload Resume - Job Recommender{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">            <div class="card auth-card">
+                <div class="card-header bg-primary text-white" style="background-color: #007bff !important;">
+                    <h4 class="mb-0">Upload Your Resume</h4>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Upload your resume to help us find jobs that match your skills and experience.
+                    </p>                    <form method="POST" action="{{ url_for('upload_resume') }}" enctype="multipart/form-data" id="resumeUploadForm">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ form.resume.label(class="form-label") }}
+                            {{ form.resume(class="form-control") }}
+                            {% if form.resume.errors %}
+                                {% for error in form.resume.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                            <div class="form-text">Supported formats: PDF, DOCX, TXT</div>
+                        </div>
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary", onclick="showLoading('Analyzing resume...')") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

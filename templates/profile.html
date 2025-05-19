@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}Profile - Job Recommender{% endblock %}
+
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">            <!-- Basic Profile Information -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">Your Profile</h2>
+                    <button type="button" class="btn btn-primary btn-sm" id="editProfileBtn">
+                        <i class="bi bi-pencil me-1"></i>Edit Profile
+                    </button>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('profile') }}" id="profileForm">
+                        {{ form.hidden_tag() }}
+                        <!-- Username section -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Username</label>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="flex-grow-1">
+                                    {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), disabled=true) }}
+                                    {% if form.username.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.username.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>                        <!-- Email section -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Email</label>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="flex-grow-1">
+                                    {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), disabled=true) }}
+                                    {% if form.email.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.email.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Professional Summary section -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Professional Summary</label>
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="flex-grow-1">
+                                    {{ form.summary(class="form-control", rows=4, disabled=true) }}
+                                    <div class="form-text">Write a brief summary of your professional background and career goals.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Skills section -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Skills</label>
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="flex-grow-1">
+                                    {{ form.skills(class="form-control", rows=3, disabled=true) }}
+                                    <div class="form-text">Enter your skills separated by commas (e.g., Python, JavaScript, SQL)</div>
+                                    {% if resume_skills %}
+                                    <div class="mt-2">
+                                        <strong>Skills from Resume:</strong>
+                                        <div class="d-flex flex-wrap gap-1 mt-1">
+                                            {% for skill in resume_skills %}
+                                            <span class="badge bg-primary">{{ skill }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>                        <!-- Location section -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Location</label>
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="flex-grow-1">
+                                    {{ form.location(class="form-control" + (" is-invalid" if form.location.errors else ""), disabled=true) }}
+                                    {% if form.location.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.location.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="form-text">Enter your preferred work location (e.g., Seattle, WA or Remote)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Certifications section -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Certifications</label>
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="flex-grow-1">
+                                    {{ form.certifications(class="form-control", rows=2, disabled=true) }}
+                                    <div class="form-text">Enter your certifications separated by commas</div>
+                                </div>
+                            </div>
+                        </div>                        <!-- Update button (hidden by default) -->
+                        <div class="mb-3" id="updateButtonsContainer" style="display: none;">
+                            <button type="submit" class="btn btn-success me-2" onclick="showLoading('Saving profile changes...')">
+                                <i class="bi bi-check-lg me-1"></i>Save Changes
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="cancelEditBtn">
+                                <i class="bi bi-x-lg me-1"></i>Cancel
+                            </button>                        </div>
+                    </form>
+                </div>            </div>
+
+            <!-- Work Experience & Education sections temporarily removed -->
+            <div class="alert alert-info mb-4">
+                <h4 class="alert-heading">Coming Soon!</h4>
+                <p class="mb-0">Work Experience and Education sections are currently being developed and will be available soon.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/loading.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Profile form elements
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const updateButtonsContainer = document.getElementById('updateButtonsContainer');
+    const profileForm = document.getElementById('profileForm');
+    const formInputs = document.querySelectorAll('#profileForm input, #profileForm textarea');
+    const formValues = {};
+
+    // Store original form values for cancel functionality
+    formInputs.forEach(input => {
+        formValues[input.id] = input.value;
+    });
+
+    // Edit Profile Button Click Handler
+    if (editProfileBtn) {
+        editProfileBtn.addEventListener('click', function() {
+            formInputs.forEach(input => {
+                input.disabled = false;
+            });
+            updateButtonsContainer.style.display = 'block';
+            editProfileBtn.style.display = 'none';
+        });
+    }
+
+    // Cancel Edit Button Click Handler
+    if (cancelEditBtn) {
+        cancelEditBtn.addEventListener('click', function() {
+            formInputs.forEach(input => {
+                input.value = formValues[input.id];
+                input.disabled = true;
+            });
+            updateButtonsContainer.style.display = 'none';
+            editProfileBtn.style.display = 'inline-block';
+        });
+    }
+
+    // Auto-hide end date when current job is checked
+    const currentJobCheckbox = document.querySelector('#current_job');
+    const endDateField = document.querySelector('#end_date');
+    
+    if (currentJobCheckbox && endDateField) {
+        currentJobCheckbox.addEventListener('change', function() {
+            endDateField.closest('.mb-3').style.display = this.checked ? 'none' : 'block';
+            if (this.checked) {
+                endDateField.value = '';
+            }
+        });    }
+});
+</script>
+{% endblock %}

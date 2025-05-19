@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% from "components/empty_courses.html" import empty_category %}
+
+{% block content %}
+<div class="container mt-4">    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-mortarboard me-2"></i>Course Recommendations</h2>
+    </div>
+
+    {% if needs_resume %}
+    <div class="alert alert-info">
+        <h4 class="alert-heading"><i class="bi bi-info-circle-fill me-2"></i>Welcome to Course Recommendations!</h4>
+        <p>To get personalized course recommendations, you'll need to:</p>
+        <ul>
+            <li><strong>Upload your resume</strong> so we can analyze your skills</li>
+            <li>OR <strong>add skills to your profile</strong> manually</li>
+        </ul>
+        <hr>
+        <div class="d-flex justify-content-between">
+            <a href="{{ url_for('upload_resume') }}" class="btn btn-primary">Upload Resume</a>
+            <a href="{{ url_for('profile') }}" class="btn btn-secondary">Update Profile</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-person-check me-2"></i>Your Skills</h5>
+                </div>
+                <div class="card-body">
+                    {% if user_skills %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for skill in user_skills %}
+                                <span class="badge bg-success">{{ skill }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No skills found. Try uploading your resume or updating your profile.</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% if missing_skills %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clipboard-plus me-2"></i>Skills to Learn</h5>
+                </div>                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for skill in missing_skills %}
+                            <a href="#skill-{{ skill|lower }}" class="text-decoration-none" title="View courses for {{ skill }}">
+                                <span class="badge bg-warning text-dark skill-badge">{{ skill }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-8">
+            {% if course_recommendations %}            <div class="course-recommendations">
+                {% for skill, courses in course_recommendations.items() %}
+                <div id="skill-{{ skill|lower }}" class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            {% if skill in missing_skills %}
+                            <span class="badge bg-warning text-dark me-2">{{ skill }}</span>
+                            {% else %}
+                            <span class="badge bg-success me-2">{{ skill }}</span>
+                            {% endif %}
+                            Recommended Courses
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% if courses %}                                {% for course in courses %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card h-100 shadow-sm course-card">
+                                        <div class="course-image-container">
+                                            {% if course.image %}
+                                            <img src="{{ course.image }}" class="card-img-top w-100 h-100" alt="{{ course.name }}" style="object-fit: cover;">
+                                            {% else %}
+                                            <div class="d-flex align-items-center justify-content-center h-100">
+                                                <i class="bi bi-mortarboard text-muted" style="font-size: 3rem;"></i>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ course.name }}</h6>
+                                            <p class="card-text small">{{ course.description }}</p>
+                                        </div>
+                                        <div class="card-footer bg-transparent">
+                                            <a href="{{ course.link }}" target="_blank" class="btn btn-primary btn-sm d-block">
+                                                <i class="bi bi-box-arrow-up-right me-1"></i>Learn More
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}{% else %}                                <div class="col-12">
+                                    {{ empty_category(skill) }}
+                                </div>
+                            {% endif %}
+                        </div>                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="card shadow-sm no-courses-global">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-info-circle-fill text-info mb-3" style="font-size: 3rem;"></i>
+                    <h5 class="mb-3">No Course Recommendations Available</h5>
+                    <p class="mb-4">We don't have any course recommendations for you at the moment.</p>
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <div class="d-flex gap-3 justify-content-center">
+                                <a href="{{ url_for('list_all_jobs') }}" class="btn btn-primary">
+                                    <i class="bi bi-briefcase me-1"></i>Browse Jobs
+                                </a>
+                                <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-person me-1"></i>Update Skills
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

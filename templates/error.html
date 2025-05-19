@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if code == 404 %}
+        Page Not Found
+    {% elif code == 500 %}
+        Server Error
+    {% elif code == 403 %}
+        Access Forbidden
+    {% else %}
+        Error
+    {% endif %} | Job Recommender
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="card shadow-sm mb-5">
+                <div class="card-body p-5">
+                    <h1 class="display-1 text-muted mb-4">{{ code }}</h1>
+                    
+                    <h2 class="h3 mb-4">
+                        {% if code == 404 %}
+                            Page Not Found
+                        {% elif code == 500 %}
+                            Server Error
+                        {% elif code == 403 %}
+                            Access Forbidden
+                        {% else %}
+                            An Error Occurred
+                        {% endif %}
+                    </h2>
+                    
+                    <p class="lead mb-4">{{ message }}</p>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="mt-4">
+                        <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-home me-2"></i> Back to Home
+                        </a>
+                        
+                        {% if code == 404 %}
+                        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg ms-2">
+                            <i class="fas fa-arrow-left me-2"></i> Go Back
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

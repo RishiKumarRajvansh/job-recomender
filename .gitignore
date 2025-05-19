@@ -1,0 +1,50 @@
+# Virtual Environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE / Editor specific
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Database files (if local and not meant for repo)
+# instance/  # Common for Flask instance folders
+# *.sqlite3
+
+# ... (previous content) ...
+
+# Database files
+instance/
+*.sqlite3
+site.db
+# Instance folder - contains runtime-specific files like databases
+instance/
+
+# Specific database files if you prefer more granularity (optional if instance/ is already ignored)
+# instance/*.db
+# job_recommender.db # If it was previously in the root
+
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE / Editor specific files
+.vscode/
+.idea/
+*.swp
+
+# Documentation files
+/readme.md
+/README.md
+README.md

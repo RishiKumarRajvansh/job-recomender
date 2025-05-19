@@ -1,0 +1,20 @@
+# render.yaml
+services:
+  - type: web
+    name: job-recommender-system
+    env: python
+    buildCommand: ./build.sh
+    startCommand: gunicorn wsgi:app
+    envVars:
+      - key: FLASK_APP
+        value: wsgi.py
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_DEBUG
+        value: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:///instance/job_recommender.db
+      - key: PYTHON_VERSION
+        value: 3.10.11
