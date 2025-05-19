@@ -93,6 +93,20 @@ def parse_job_listing(job_listing, user_id, user_skills=None):
         return None
         
     try:
+        # Check if job_listing is already a dictionary (from database)
+        if isinstance(job_listing, dict):
+            logger.info("Job listing is already a dictionary, saving directly")
+            # Make a copy to avoid modifying the original
+            job_data = job_listing.copy()
+            # Ensure user_id is set
+            job_data['user_id'] = user_id
+            
+            # If it's already a dictionary, just save it directly
+            from database_manager import save_job_to_db
+            return save_job_to_db(job_data, user_id)
+            
+        # If we get here, job_listing is a BeautifulSoup element
+        
         # Initialize job data with required fields
         job_data = {
             'user_id': user_id,
@@ -102,13 +116,30 @@ def parse_job_listing(job_listing, user_id, user_skills=None):
         # Extract job ID if available
         if hasattr(job_listing, 'get'):
             job_data['job_id'] = job_listing.get('data-aid', '')
-        
-        # Extract title and URL
-        title_elem = job_listing.select_one('h2[itemprop="title"], h2.job-title, .a-title, a[data-aid="jobTitle"]')
-        if not title_elem:
-            title_elem = job_listing.select_one('h2 a')
-        if not title_elem or not title_elem.get_text().strip():
-            logger.warning("No title found for job listing")
+          # Extract title and URL
+        try:
+            # Check if job_listing is a dictionary (already parsed or from DB)
+            if isinstance(job_listing, dict):
+                # Dictionary already has all the data we need
+                from database_manager import save_job_to_db
+                job_listing['user_id'] = user_id  # Ensure user_id is set
+                return save_job_to_db(job_listing, user_id)
+                
+            # Otherwise, proceed with BeautifulSoup parsing
+            title_elem = job_listing.select_one('h2[itemprop="title"], h2.job-title, .a-title, a[data-aid="jobTitle"]')
+            if not title_elem:
+                title_elem = job_listing.select_one('h2 a')
+            if not title_elem or not title_elem.get_text().strip():
+                logger.warning("No title found for job listing")
+                return None
+        except AttributeError:
+            logger.error(f"Error parsing job listing: 'dict' object has no attribute 'select_one'")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            # If it's a dictionary but we tried to use BeautifulSoup methods
+            if isinstance(job_listing, dict):
+                from database_manager import save_job_to_db
+                job_listing['user_id'] = user_id
+                return save_job_to_db(job_listing, user_id)
             return None
             
         job_data['title'] = title_elem.get_text().strip()
@@ -470,55 +501,73 @@ def _do_search(search_query, location, pages, searched_urls, skill=None, user_id
     base_url = "https://www.adzuna.in/search"
     jobs_found = []
     
-    for page_num in range(1, pages + 1):
-        params = {}
-        if search_query:
-            params['q'] = search_query
-        params['w'] = location
-        params['p'] = page_num
-        
-        logger.info(f"Scraping Adzuna page {page_num} for query: {search_query}...")
-        html_content = fetch_page(base_url, params=params)
-        if not html_content:
-            logger.warning(f"Failed to fetch Adzuna search results page {page_num}. Skipping.")
-            continue
-        
-        soup = BeautifulSoup(html_content, 'html.parser')
-        
-        # Use the specific Adzuna article selector
-        articles = soup.select('article.a')
-        
-        if not articles:
-            logger.warning(f"No job listings found on page {page_num}. Trying alternative selectors...")
-            # Try alternative selectors if the main one fails
-            articles = soup.select('[data-aid]') or soup.select('.job-listing') or soup.select('.result')
-        
-        if not articles:
-            logger.warning(f"No job listings found on page {page_num} with any selector")
-            continue
+    try:
+        for page_num in range(1, pages + 1):
+            params = {}
+            if search_query:
+                params['q'] = search_query
+            params['w'] = location
+            params['p'] = page_num
             
-        logger.info(f"Found {len(articles)} job listings on page {page_num}")
-        for article in articles:
+            logger.info(f"Scraping Adzuna page {page_num} for query: {search_query}...")
             try:
-                # First parse and save basic job details
-                job_id = parse_job_listing(article, user_id, user_skills=user_skills)
-                if job_id:
-                    # Add the current skill if provided
-                    if skill:
-                        add_job_skills(job_id, [skill])
-                    jobs_found.append(job_id)
-                    # Only log summary information, not individual job processing
+                html_content = fetch_page(base_url, params=params)
+                if not html_content:
+                    logger.warning(f"Failed to fetch Adzuna search results page {page_num}. Skipping.")
+                    continue
             except Exception as e:
-                logger.error(f"Error processing job listing: {str(e)}")
+                logger.error(f"Error fetching search page {page_num}: {e}")
                 continue
+                
+            # Process the HTML content for this page
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # Use the specific Adzuna article selector
+            articles = soup.select('article.a')
+            
+            if not articles:
+                logger.warning(f"No job listings found on page {page_num}. Trying alternative selectors...")
+                # Try alternative selectors if the main one fails
+                articles = soup.select('[data-aid]') or soup.select('.job-listing') or soup.select('.result')
+            
+            if not articles:
+                logger.warning(f"No job listings found on page {page_num} with any selector")
+                continue
+                
+            logger.info(f"Found {len(articles)} job listings on page {page_num}")
+            for article in articles:
+                try:
+                    # First parse and save basic job details
+                    job_id = None
+                    if isinstance(article, dict):
+                        # If article is already a dictionary, save directly
+                        article['user_id'] = user_id
+                        job_id = save_job_to_db(article, user_id)
+                    else:
+                        # Otherwise parse as BeautifulSoup element
+                        job_id = parse_job_listing(article, user_id, user_skills=user_skills)
+                    
+                    if job_id:
+                        # Add the current skill if provided
+                        if skill:
+                            add_job_skills(job_id, [skill])
+                        jobs_found.append(job_id)
+                        # Only log summary information, not individual job processing
+                except Exception as e:
+                    logger.error(f"Error processing job listing: {str(e)}")
+                    continue
+                    
+            # Random delay between pages
+            if page_num < pages:
+                delay = random.uniform(2, 5)
+                logger.info(f"Waiting {delay:.2f} seconds before next page...")
+                time.sleep(delay)
         
-        # Random delay between pages
-        if page_num < pages:
-            delay = random.uniform(2, 5)
-            logger.info(f"Waiting {delay:.2f} seconds before next page...")
-            time.sleep(delay)
-    
-    return jobs_found
+        return jobs_found
+    except Exception as e:
+        logger.error(f"Error in _do_search: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jobs_found
 
 def scrape_jobs(query="All", location="All", user_skills=None, pages=1, force_clear=False, user_id=None):
     """
@@ -562,7 +611,16 @@ def scrape_jobs(query="All", location="All", user_skills=None, pages=1, force_cl
         logger.info(f"Number of jobs returned: {len(adzuna_jobs)}")
         for job_listing in adzuna_jobs:
             try:
-                job_id = parse_job_listing(job_listing, user_id, user_skills)
+                # Check if job_listing is already a dictionary (from database)
+                job_id = None
+                if isinstance(job_listing, dict):
+                    # Ensure user_id is set
+                    job_listing['user_id'] = user_id
+                    job_id = save_job_to_db(job_listing, user_id)
+                else:
+                    # Otherwise parse it as BeautifulSoup element
+                    job_id = parse_job_listing(job_listing, user_id, user_skills)
+                
                 if job_id:
                     all_jobs.append(job_id)
                 else:

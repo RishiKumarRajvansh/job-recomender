@@ -108,13 +108,12 @@ def initialize_database():
                 FOREIGN KEY (user_id) REFERENCES user (id)
             )
         ''')
-        
-        # Create jobs table
+          # Create jobs table
         logger.info("Creating jobs table...")
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS jobs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
+                user_id INTEGER,  /* Allow NULL for backward compatibility */
                 job_id TEXT,
                 title TEXT,
                 company TEXT,
@@ -317,9 +316,17 @@ def save_job_to_db(job_data, user_id):
     Returns:
         int: ID of the saved job, or None if there was an error
     """
-    if not job_data or not user_id:
-        logger.error(f"No job data or user_id provided. user_id: {user_id}")
+    if not job_data:
+        logger.error("No job data provided.")
         return None
+        
+    # Ensure user_id is set either from parameter or from job_data
+    if not user_id and 'user_id' in job_data:
+        user_id = job_data['user_id']
+        
+    if not user_id:
+        logger.warning("No user_id provided for job. Using default user.")
+        user_id = 1  # Use default user if none provided
         
     conn = None
     try:
@@ -423,10 +430,29 @@ def save_job_to_db(job_data, user_id):
                 conn.commit()
                 return job_id
             except sqlite3.IntegrityError as e:
-                logger.error(f"Failed to insert job '{job_data.get('title')}': {e}")
-                logger.error(f"Job data: {job_data}")
-                conn.rollback()
-                return None
+                if "FOREIGN KEY constraint failed" in str(e):
+                    # Handle case where user_id doesn't exist
+                    logger.warning(f"Foreign key constraint failed. Using default user instead. Error: {e}")
+                    # Update job_data to use default user (ID 1)
+                    for i, field in enumerate(fields):
+                        if field == 'user_id':
+                            values[i] = 1
+                            break
+                    # Try one more time with the default user
+                    try:
+                        cursor.execute(insert_query, values)
+                        job_id = cursor.lastrowid
+                        conn.commit()
+                        return job_id
+                    except sqlite3.Error as e2:
+                        logger.error(f"Still failed with default user: {e2}")
+                        conn.rollback()
+                        return None
+                else:
+                    logger.error(f"Failed to insert job '{job_data.get('title')}': {e}")
+                    logger.error(f"Job data: {job_data}")
+                    conn.rollback()
+                    return None
 
         return None
 
